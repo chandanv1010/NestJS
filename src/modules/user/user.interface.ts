@@ -13,7 +13,7 @@ export interface IUserResponse {
     email: string,
     name: string,
     phone: string,
-    password: string,
+    password?: string,
     createdAt: Date,
     updatedAt: Date
 }

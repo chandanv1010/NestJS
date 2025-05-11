@@ -1,5 +1,7 @@
 import { UserWithoutPassword } from "../user/user.interface"
 import { AuthRequest } from "./auth.request.dto"
+import { Request } from "express"
+import { User } from "@prisma/client"
 
 export interface ILoginResponse {
     accessToken: string,
@@ -23,7 +25,10 @@ export interface ITokenContext {
     sessionId?: string,
     deviceId: string,
     authRequest: AuthRequest,
-    guard: string
+    guard: string,
+    session?: ISessionData | null,
+    userSessions?: string[],
+    request?: Request
 }
 
 export interface ISessionData {
@@ -36,4 +41,12 @@ export interface ISessionData {
     wasUsed: boolean,
     isRevoked: boolean,
     expiresAt: number
+}
+
+export interface IForgotPasswordContext {
+    email: string,
+    user?: User,
+    resetToken?: string,
+    hashedToken?: string,
+    expiresAt?: Date
 }

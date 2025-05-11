@@ -7,11 +7,13 @@ import { PassportModule } from '@nestjs/passport';
 import { UserModule } from '../user/user.module';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { JwtStrategy } from './jwt.strategy';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
     PassportModule,
     UserModule,
+    MailModule,
     JwtModule.register({
       global: true,
       secret: jwtConstants.secret,

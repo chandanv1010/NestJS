@@ -30,6 +30,8 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         
         const request = context.switchToHttp().getRequest<IRequestWithGuardType>()
         request.GuardType = requireGuard
+
+
         return super.canActivate(context)
     }
 
@@ -47,6 +49,8 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         console.log(info, context, status);
         return user as TUser
     }
+
+
 }
 
 export const GuardType = (guard: string | string[]) => SetMetadata(GUARD_KEY, guard)

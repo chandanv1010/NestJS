@@ -10,12 +10,14 @@ import { createKeyv } from '@keyv/redis';
 import { Keyv } from 'keyv';
 import { CacheableMemory } from 'cacheable';
 import { PrismaModule } from './modules/prisma/prisma.module';
+import { MailModule } from './modules/mail/mail.module';
 
 @Module({
   imports: [
     AuthModule,
     UserModule,
     PrismaModule,
+    MailModule,
     CacheModule.registerAsync({
       isGlobal: true,
       useFactory: () => {

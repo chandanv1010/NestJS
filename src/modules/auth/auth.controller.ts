@@ -11,6 +11,7 @@ import { common } from 'src/config/constant';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { GuardType } from 'src/common/guards/jwt-auth.guard'; 
 import { IUserResponse } from '../user/user.interface';
+import { ForgotPasswordRequest } from './forgot-password.request.dto';
 
 const GUARD = common.admin
 
@@ -66,6 +67,29 @@ export class AuthController {
      ): Promise<TApiReponse<ILoginResponse>> {
         const res = await this.authService.refreshToken(request, GUARD, response)
         return ApiResponse.ok(res, "RefreshToken thành công", HttpStatus.OK)
+    }
+
+    @Post('/logout')
+    @HttpCode(HttpStatus.OK)
+    @GuardType(GUARD)
+    @UseGuards(JwtAuthGuard)
+    async logout(
+        @Req() request: Request,
+        @Res({passthrough: true}) response : Response
+     ): Promise<TApiReponse<string>> {
+        const res = await this.authService.logout(request, GUARD, response)
+        return ApiResponse.message("Đăng xuất thành công", HttpStatus.OK)
+    }
+
+    @Post('/forgot-password')
+    @HttpCode(HttpStatus.OK)
+    async forgotPassword(
+        @Body(new ValidationPipe()) forgotPasswordRequest: ForgotPasswordRequest,
+        @Req() request: Request,
+        @Res({passthrough: true}) response : Response
+     ): Promise<TApiReponse<string>> {
+        const res = await this.authService.forgotPassword(forgotPasswordRequest, request, response)
+        return ApiResponse.message("Email đặt lại mật khẩu đã được gửi đến địa chỉ email tồn tại trong hệ thống", HttpStatus.OK)
     }
 
 }

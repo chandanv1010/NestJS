@@ -16,4 +16,9 @@ export class UserService extends BaseService<UserRepository, User> {
     }
 
 
+    async findByEmail(email: string ): Promise<User | null>{
+        const model = await this.userRepository.findByField('email', email)
+        return model
+    } 
+
 }
