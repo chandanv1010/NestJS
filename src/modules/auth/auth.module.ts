@@ -8,6 +8,7 @@ import { UserModule } from '../user/user.module';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { JwtStrategy } from './jwt.strategy';
 import { MailModule } from '../mail/mail.module';
+import { QueueModule } from '../queue/queue.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { MailModule } from '../mail/mail.module';
       secret: jwtConstants.secret,
       signOptions: { expiresIn: '5m' },
     }),
+    QueueModule
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtAuthGuard, JwtStrategy],

@@ -1,8 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Body, Controller, HttpStatus, Post, Req, HttpCode, Get, UseGuards, UnauthorizedException, Res } from '@nestjs/common';
+import { Body, Controller, HttpStatus, Post, Req, HttpCode, Get, UseGuards, UnauthorizedException, Res, Param } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ValidationPipe } from 'src/pipes/validation.pipe';
-import { AuthRequest } from './auth.request.dto';
+import { ForgotPasswordRequest } from './dto/forgot-password.request.dto';
+import { AuthRequest } from './dto/auth.request.dto';
+import { ResetPasswordRequest } from './dto/reset-password.request.dto';
+
 import { ApiResponse, TApiReponse } from 'src/common/bases/api-reponse';
 import { ILoginResponse } from './auth.interface';
 import { Request, Response } from 'express';
@@ -11,7 +14,6 @@ import { common } from 'src/config/constant';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { GuardType } from 'src/common/guards/jwt-auth.guard'; 
 import { IUserResponse } from '../user/user.interface';
-import { ForgotPasswordRequest } from './forgot-password.request.dto';
 
 const GUARD = common.admin
 
@@ -89,7 +91,25 @@ export class AuthController {
         @Res({passthrough: true}) response : Response
      ): Promise<TApiReponse<string>> {
         const res = await this.authService.forgotPassword(forgotPasswordRequest, request, response)
-        return ApiResponse.message("Email đặt lại mật khẩu đã được gửi đến địa chỉ email tồn tại trong hệ thống", HttpStatus.OK)
+        return ApiResponse.message(res.message, HttpStatus.OK)
+    }
+
+    @Get('/verify-reset-token/:token')
+    @HttpCode(HttpStatus.OK)
+    async verifyResetToken(
+        @Param('token') token: string,
+     ): Promise<TApiReponse<string>> {
+        const res = await this.authService.verifyResetToken(token)
+        return ApiResponse.message(res.message, HttpStatus.OK)
+    }
+
+    @Post('/reset-password')
+    @HttpCode(HttpStatus.OK)
+    async resetPassword(
+        @Body(new ValidationPipe()) resetPasswordRequest: ResetPasswordRequest
+     ): Promise<TApiReponse<string>> {
+        const res = await this.authService.resetPassword(resetPasswordRequest.token, resetPasswordRequest.password)
+        return ApiResponse.message(res.message, HttpStatus.OK)
     }
 
 }

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Injectable, InternalServerErrorException, UnauthorizedException, Inject, Logger, NotFoundException } from '@nestjs/common';
-import { AuthRequest } from './auth.request.dto';
+import { Injectable, InternalServerErrorException, UnauthorizedException, Inject, Logger, NotFoundException, BadRequestException, HttpException } from '@nestjs/common';
+import { AuthRequest } from './dto/auth.request.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { UserWithoutPassword } from '../user/user.interface';
@@ -14,12 +14,20 @@ import { ExceptionHandler } from 'src/utils/exception-handler.util';
 import { Response } from 'express';
 import { UserService } from '../user/user.service';
 import { User } from '@prisma/client';
-import { ForgotPasswordRequest } from './forgot-password.request.dto';
+import { ForgotPasswordRequest } from './dto/forgot-password.request.dto';
+import { MailService } from '../mail/mail.service';
+import * as crypto from 'crypto'
+import { QueueService } from '../queue/queue.service';
 
 const ACCESS_TOKEN_TIME_TO_LIVE = '1h'
-const REFRESH_TOKEN_TIME_TO_LIVE = 30 * 24 * 60 * 60
+const REFRESH_TOKEN_TIME_TO_LIVE = 30 * 24 * 60 * 60 * 1000
 const MAX_SESSION_PER_USER = 5;
 const REFRESH_TOKEN_COOKIE_NAME = 'nestJs_refresh_token';
+
+const PASSWORD_RESET_MAX_ATTEMPS = 3 //Số lần tối đa trong 1 khung thời gian
+const PASSWORD_RESET_WINDOW = 60 * 60 * 1000 // 1 giờ tính bằng giây
+const PASSWORD_RESET_LOCKOUT = 24 * 60 * 60 * 1000 // thời gian khóa 24 giờ
+
 
 @Injectable()
 export class AuthService {
@@ -31,6 +39,8 @@ export class AuthService {
         private readonly prismaService: PrismaService,
         private readonly jwtService: JwtService,
         private readonly userService: UserService,
+        private readonly mailService: MailService,
+        private readonly queueService: QueueService,
         @Inject(CACHE_MANAGER) private cacheManager: Cache
     ){
         
@@ -501,20 +511,50 @@ export class AuthService {
         return context;
     }
 
-    async forgotPassword(forgotPasswordRequest: ForgotPasswordRequest, request: Request, response: Response): Promise<IForgotPasswordContext>{
+    async forgotPassword(forgotPasswordRequest: ForgotPasswordRequest, request: Request, response: Response): Promise<{message: string}>{
+    // async forgotPassword(forgotPasswordRequest: ForgotPasswordRequest, request: Request, response: Response): Promise<IForgotPasswordContext>{
         try {
             const context = {
                 email: forgotPasswordRequest.email
             }
             
             return await Promise.resolve(context)
+                .then(context => this.checkPasswordResetRateLimit(context))
                 .then(context => this.checkEmailExists(context))
                 .then(context => this.generateResetToken(context))
                 .then(context => this.saveResetToken(context))
+                .then(context => this.sendResetMail(context))
+                .then(context => this.getResponse(context))
         } catch (error) {
             return ExceptionHandler.error(error, this.logger) 
         }
     }
+
+    private async checkPasswordResetRateLimit(context: IForgotPasswordContext): Promise<IForgotPasswordContext>{
+        const emailCacheKey = `password_reset:email:${context.email}`
+
+        const emailLocked = await this.cacheManager.get<boolean>(`${emailCacheKey}:locked`)
+        if(emailLocked){
+            this.logger.warn(`Yêu cầu đặt lại mật khẩu bị từ chối: Email ${context.email} bị khóa`)
+            throw new InternalServerErrorException('Quá nhiều yêu cầu đặt lại mật khẩu. Hãy thử lại sau 24 tiếng')
+        }
+
+        const emailAttempts = await this.cacheManager.get<number>(emailCacheKey) || 0
+        const newEmailAttempts = emailAttempts + 1
+
+        await this.cacheManager.set(emailCacheKey, newEmailAttempts, 100000)
+
+        console.log(newEmailAttempts, PASSWORD_RESET_MAX_ATTEMPS);
+        
+
+        if(newEmailAttempts > PASSWORD_RESET_MAX_ATTEMPS) {
+            this.logger.warn(`Email ${context.email} đã vượt quá giới hạn yêu cầu đặt lại mật khẩu. Đã khóa chức năng trong 24 tiếng`)
+            await this.cacheManager.set(`${emailCacheKey}:locked`, true, PASSWORD_RESET_LOCKOUT)
+            throw new InternalServerErrorException('Quá nhiều yêu cầu đặt lại mật khẩu, Hãy thử lại sau 24 giờ')
+        }
+        return context
+    }
+
 
     private async checkEmailExists(context: IForgotPasswordContext): Promise<IForgotPasswordContext>{
         const user = await this.userService.findByEmail(context.email)
@@ -529,7 +569,7 @@ export class AuthService {
         if(!context.user) return context
 
         const resetToken = randomBytes(32).toString('hex')
-        const hasedToken = await bcrypt.hash(resetToken, 10)
+        const hasedToken = crypto.createHash('sha256').update(resetToken).digest('hex')
         const expiresAt = new Date(Date.now() + 60 * 60 * 1000 )
         
         context.resetToken = resetToken
@@ -540,10 +580,75 @@ export class AuthService {
     }
 
     private async saveResetToken(context: IForgotPasswordContext): Promise<IForgotPasswordContext> {
-        if(!context.user || !context.hashedToken || !context.resetToken) return context
+        try {
+             if(!context.user || !context.hashedToken || !context.resetToken) return context
+            await this.userService.save({
+                passwordResetToken: context.hashedToken,
+                passwordResetTokenExpires: context.expiresAt
+            }, Number(context.user.id))
+            this.logger.log(`Đã tạo và lưu resetToken vào database cho người dùng ${context.user.id}`)
 
-
-        return Promise.resolve(context)
+            return context
+            
+        } catch (error) {
+            this.logger.error(`Lỗi khi lưu token đặt lại mật khẩu: ${error instanceof Error ? error.message : 'Không xác định'}`)
+            throw new InternalServerErrorException('Không thể xử lý yêu cầu đặt lại mật khẩu')
+        }
+       
     }
 
+    private async sendResetMail(context: IForgotPasswordContext): Promise<IForgotPasswordContext> {
+        try {
+            if(!context.resetToken){
+                throw new BadRequestException('Tạo mã reset mật khẩu không thành công')
+            }
+
+            await this.queueService.addJob<{email: string, token: string}>('send-reset-email', {
+                email: context.email,
+                token: context.resetToken,
+            }, undefined)
+            // await this.mailService.sendForgotResetEmail(context.email, context.resetToken)
+            this.logger.log(`Đã thêm Email vào hàng đợi từ : AuthService`);
+            return context
+        } catch (error) {
+            this.logger.error(`Lỗi khi lưu token đặt lại mật khẩu: ${error instanceof Error ? error.message : 'Không xác định'}`)
+            return context
+        }
+    }
+
+    private async getResponse(context: IForgotPasswordContext): Promise<{message: string}> {
+        if(context.hashedToken) delete context.hashedToken
+        if(context.resetToken) delete context.resetToken
+
+        return Promise.resolve({message: `Bạn sẽ nhận được Email hướng dẫn đặt lại mật khẩu tại địa chỉ  ${context.email}. Hãy làm theo hướng dẫn`})
+    }
+
+    async verifyResetToken(token: string):  Promise<{message: string}> {
+        
+        const hasedToken = crypto.createHash('sha256').update(token).digest('hex')
+        const user = await this.userService.findResetToken(hasedToken)
+        if(!user){
+            throw new BadRequestException('Token không hợp lệ hoặc đã hết hạn')
+        }
+
+        return Promise.resolve({message: 'Verify Reset Token thành công'})
+    }
+
+    async resetPassword(token: string, password: string): Promise<{message: string}> {
+        const hasedToken = crypto.createHash('sha256').update(token).digest('hex')
+        const user = await this.userService.findResetToken(hasedToken)
+        if(!user){
+            throw new BadRequestException('Token không hợp lệ hoặc đã hết hạn')
+        }
+        const payload = {
+            password: await bcrypt.hash(password, 10),
+            passwordResetToken: null,
+            passwordResetTokenExpires: null
+        }
+
+        await this.userService.save(payload, Number(user.id))
+
+        return Promise.resolve({ message: 'Thay đổi mật khẩu thành công, hãy thử đăng nhập lại' })
+    }
+    
 }

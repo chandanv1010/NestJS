@@ -15,5 +15,16 @@ export class UserRepository extends BaseRepository<
         super(prisma.user)
     }
 
+    async isValidResetToken(token: string): Promise<User | null> {
+        return await this.model.findFirstOrThrow({
+            where: {
+                passwordResetToken: token,
+                passwordResetTokenExpires: {
+                    gt: new Date()
+                }
+            }
+        })
+    }
+
 
 }

@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { Logger } from "@nestjs/common";
-import { IBaseRepository } from "src/repositories/base.repository";
 import { PrismaService } from "src/modules/prisma/prisma.service";
+import { IBaseRepository } from "src/repositories/base.repository";
 
 
 type TResult<T> = T | T[] | null | string | number
@@ -17,7 +17,7 @@ export class BaseService<R extends IBaseRepository<TModel, ID>, TModel, ID = num
 
     constructor(
         private readonly repository: R,
-        private readonly prismaService?: PrismaService,
+        protected readonly prismaService?: PrismaService,
     ){
         
     }
@@ -27,13 +27,12 @@ export class BaseService<R extends IBaseRepository<TModel, ID>, TModel, ID = num
         return model
     }
 
-    async save<P>(payload: P, id?: ID): Promise<TResult<TModel>>{
-
+     async save<P>(payload: P, id?: ID): Promise<TResult<TModel>>{
         if(!this.prismaService){
             throw new BadRequestException("Không thể mở transaction cho tiến trình này")
         }
 
-        return await this.prismaService?.$transaction(async() => {
+        return await this.prismaService.$transaction(async() => {
              return await this.prepareModelData<P>(payload)
                 .then(() => this.beforeSave())
                 .then(() => this.saveModel(id))
