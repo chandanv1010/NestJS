@@ -4,7 +4,8 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
-import { UserModule } from './modules/user/user.module';
+import { UserModule } from './modules/user/user/user.module';
+import { UserCatalogueModule } from './modules/user/user_catalogue/user.catalogue.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { createKeyv } from '@keyv/redis';
 import { PrismaModule } from './modules/prisma/prisma.module';
@@ -16,6 +17,7 @@ import { BullModule } from '@nestjs/bull';
   imports: [
     AuthModule,
     UserModule,
+    UserCatalogueModule,
     PrismaModule,
     MailModule,
     ConfigModule.forRoot({

@@ -1,4 +1,4 @@
-import { UserWithoutPassword } from "../user/user.interface"
+import { UserWithoutPassword } from "../user/user/user.interface"
 import { AuthRequest } from "./dto/auth.request.dto"
 import { Request } from "express"
 import { User } from "@prisma/client"

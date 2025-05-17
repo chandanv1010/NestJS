@@ -4,7 +4,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { jwtConstants } from "./auth.constant";
 import { IJwtPayload } from "./auth.interface";
 import { PrismaService } from "../prisma/prisma.service";
-import { UserService } from "../user/user.service";
+import { UserService } from "../user/user/user.service";
 import { IRequestWithGuardType } from "src/common/guards/jwt-auth.guard";
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';

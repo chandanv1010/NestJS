@@ -4,7 +4,7 @@ import { AuthService } from './auth.service';
 import { JwtModule } from '@nestjs/jwt';
 import { jwtConstants } from './auth.constant';
 import { PassportModule } from '@nestjs/passport';
-import { UserModule } from '../user/user.module';
+import { UserModule } from '../user/user/user.module';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { JwtStrategy } from './jwt.strategy';
 import { MailModule } from '../mail/mail.module';

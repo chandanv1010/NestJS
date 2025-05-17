@@ -30,3 +30,16 @@ model User {
   @@map("users")
 
 } 
+
+
+model UserCatalogue {
+    id BigInt @id @default(autoincrement())
+    name String
+    canonical String
+    publish Int @db.TinyInt
+    createdAt DateTime @default(now())
+    updatedAt DateTime @default(now())
+
+  @@map("user_catalogues")
+
+} 

@@ -3,10 +3,11 @@ import { Injectable } from "@nestjs/common";
 import { Logger } from "@nestjs/common";
 import { BaseService } from "src/common/bases/base.service";
 import { User } from "@prisma/client";
-import { PrismaService } from "../prisma/prisma.service";
+import { PrismaService } from "../../prisma/prisma.service";
+import { UserDto } from "./dto/user.response.dto";
 
 @Injectable()
-export class UserService extends BaseService<UserRepository, User> {
+export class UserService extends BaseService<UserRepository, User, UserDto> {
     private readonly userLogger = new Logger(UserService.name)
 
 
@@ -14,7 +15,7 @@ export class UserService extends BaseService<UserRepository, User> {
         private readonly userRepository: UserRepository,
         protected readonly prismaService: PrismaService
     ){
-        super(userRepository, prismaService)
+        super(userRepository, prismaService, UserDto)
     }
 
 

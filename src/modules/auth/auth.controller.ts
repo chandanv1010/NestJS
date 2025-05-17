@@ -9,11 +9,12 @@ import { ResetPasswordRequest } from './dto/reset-password.request.dto';
 import { ApiResponse, TApiReponse } from 'src/common/bases/api-reponse';
 import { ILoginResponse } from './auth.interface';
 import { Request, Response } from 'express';
-import { UserService } from '../user/user.service';
+import { UserService } from '../user/user/user.service';
 import { common } from 'src/config/constant';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { GuardType } from 'src/common/guards/jwt-auth.guard'; 
-import { IUserResponse } from '../user/user.interface';
+import { IUserResponse } from '../user/user/user.interface';
+import { UserDto } from '../user/user/dto/user.response.dto';
 
 const GUARD = common.admin
 
@@ -40,7 +41,7 @@ export class AuthController {
     @UseGuards(JwtAuthGuard)
     @Get('/me')
     @HttpCode(HttpStatus.OK)
-    async me(@Req() request: Request): Promise<TApiReponse<IUserResponse>> {
+    async me(@Req() request: Request): Promise<TApiReponse<UserDto>> {
 
         try {
             const auth = (request.user as { userId: number | string })
@@ -48,13 +49,7 @@ export class AuthController {
             if(!user){
                 throw new UnauthorizedException("Thông tin không hợp lệ")
             }
-            const {password, ...userFields } = user
-
-            const userWithoutPassword = { 
-                ...userFields,
-                id: user.id.toString()
-            }
-            return ApiResponse.ok(userWithoutPassword as IUserResponse, "Success!", HttpStatus.OK)          
+            return ApiResponse.ok(user as UserDto, "Success!", HttpStatus.OK)          
         }catch (error) {
             console.log(error)
             throw error

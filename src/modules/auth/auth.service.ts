@@ -3,7 +3,7 @@ import { Injectable, InternalServerErrorException, UnauthorizedException, Inject
 import { AuthRequest } from './dto/auth.request.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
-import { UserWithoutPassword } from '../user/user.interface';
+import { UserWithoutPassword } from '../user/user/user.interface';
 import { ILoginResponse, IJwtPayload, ITokenContext, ISessionData, IForgotPasswordContext } from './auth.interface';
 import { JwtService } from '@nestjs/jwt';
 import { randomBytes } from 'crypto';
@@ -12,7 +12,7 @@ import { Cache } from 'cache-manager';
 import { Request } from 'express';
 import { ExceptionHandler } from 'src/utils/exception-handler.util';
 import { Response } from 'express';
-import { UserService } from '../user/user.service';
+import { UserService } from '../user/user/user.service';
 import { User } from '@prisma/client';
 import { ForgotPasswordRequest } from './dto/forgot-password.request.dto';
 import { MailService } from '../mail/mail.service';
@@ -361,7 +361,7 @@ export class AuthService {
         if(!context.session){
             throw new UnauthorizedException("Thiếu thông tin session trong Context")
         }
-        const user: User = (await this.userService.show(context.session.userId))!
+        const user: User = (await this.userService.findById(context.session.userId))!
         context.user = user
         return context
     }
@@ -392,7 +392,7 @@ export class AuthService {
             if(!auth){
                 throw new UnauthorizedException("Không xác định được người dùng")
             }
-            context.user = (await this.userService.show(auth.userId))!
+            context.user = (await this.userService.findById(auth.userId))!
             await Promise.resolve(context)
                .then((context) => this.findUserSessions(context))
                .then((context) => this.findDeviceSession(context))
