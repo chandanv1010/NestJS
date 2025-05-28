@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { IsEmail, IsString, IsNotEmpty, MinLength  } from "class-validator";
 
 export class AuthRequest {
@@ -12,5 +11,4 @@ export class AuthRequest {
     @IsNotEmpty({message: "Mật khẩu không được để trống"})
     @MinLength(6, {message: "Mật khẩu phải có tối thiểu 6 kí tự"})
     password: string;
-
 }

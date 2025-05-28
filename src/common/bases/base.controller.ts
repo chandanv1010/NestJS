@@ -17,9 +17,7 @@ const GUARD = common.admin
 
 export class BaseController<
     T extends {id: bigint}, 
-    S extends BaseServiceInterface<C, U, T, R>, 
-    C, 
-    U, 
+    S extends BaseServiceInterface<T, R>, 
     R
 > {
     private readonly logger = new Logger(BaseController.name)
@@ -30,19 +28,7 @@ export class BaseController<
 
    
 
-    @GuardType(GUARD)
-    @UseGuards(JwtAuthGuard)
-    @Post()
-    @HttpCode(HttpStatus.CREATED)
-    async store(
-        @Body(new ValidationPipe()) storeRequest: C,
-        @Req() request: Request
-    ) : Promise<TApiReponse<R>> {
-
-        const data: TResult<T, R> = await this.service.save<C>(storeRequest)
-        const response = convertResponse<T>(data as unknown as T)
-        return ApiResponse.ok(response as R, 'Success', HttpStatus.CREATED)      
-    }
+    
 
 
 }

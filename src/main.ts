@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './exceptions/global-exception.filter';
 import * as cookieParser from 'cookie-parser'
+import { useContainer } from 'class-validator';
 
 
 async function bootstrap() {
@@ -13,7 +14,9 @@ async function bootstrap() {
         origin: process.env.FRONTEND_URL,
     })
     app.use(cookieParser())
-  await app.listen(process.env.PORT ?? 3000);
+
+    useContainer(app.select(AppModule), { fallbackOnErrors: true });
+    await app.listen(process.env.PORT ?? 3000);
 }
 // eslint-disable-next-line @typescript-eslint/no-floating-promises
 bootstrap();

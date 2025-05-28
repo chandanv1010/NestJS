@@ -1,21 +1,15 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Injectable, InternalServerErrorException, UnauthorizedException, Inject, Logger, NotFoundException, BadRequestException, HttpException } from '@nestjs/common';
 
-
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
-import { Request } from 'express';
-import { Response } from 'express';
-
-import { ExceptionHandler } from 'src/utils/exception-handler.util';
-
-
 import { UserCatalogue } from '@prisma/client';
 import { BaseService } from 'src/common/bases/base.service';
 import { PrismaService } from "../../prisma/prisma.service";
 import { UserCatalogueRepository } from './user.catalogue.repository';
 import { UserCatalogueDto } from './dto/user.catalogue.response.dto';
-
+import { ValidateService } from 'src/modules/validate/validate.service';
+import { StoreRequest } from './dto/store.request';
+import { UpdateRequest } from './dto/update.request';
+import { log } from 'util';
 
 @Injectable()
 export class UserCatalogueService extends BaseService<UserCatalogueRepository, UserCatalogue, UserCatalogueDto> {
@@ -25,11 +19,22 @@ export class UserCatalogueService extends BaseService<UserCatalogueRepository, U
 
     constructor(
         private readonly userCatalogueRepository: UserCatalogueRepository,
-        protected readonly prismaService: PrismaService
+        protected readonly prismaService: PrismaService,
+        private readonly validateService: ValidateService
     ){
         super(userCatalogueRepository, prismaService, UserCatalogueDto)
     }
 
-    
+    protected async beforeSave(id?: number, payload?: StoreRequest | UpdateRequest): Promise<this>{
+        if(!payload){
+            throw new BadRequestException('Dữ liệu không hợp lệ')
+        }
+        await this.validateService.model('userCatalogue')
+                .context({id: id})
+                .unique('canonical', payload.canonical, 'Canonical đã tồn tại')
+                .validate()
+
+        return Promise.resolve(this)
+    }
     
 }

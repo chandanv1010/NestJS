@@ -12,9 +12,13 @@ import { PrismaModule } from './modules/prisma/prisma.module';
 import { MailModule } from './modules/mail/mail.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BullModule } from '@nestjs/bull';
+import { ValidatorModule } from './validator/validator.module';
+import { ValidateModule } from './modules/validate/validate.module';
 
 @Module({
   imports: [
+    ValidateModule,
+    ValidatorModule,
     AuthModule,
     UserModule,
     UserCatalogueModule,

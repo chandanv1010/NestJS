@@ -35,7 +35,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         return super.canActivate(context)
     }
 
-    handleRequest<TUser = unknown>(err: unknown, user: unknown, info: unknown, context: ExecutionContext, status?: unknown): TUser {
+    handleRequest<TUser = unknown>(err: unknown, user: unknown): TUser {
         if(err){
             if(err instanceof Error){
                 throw err
@@ -46,7 +46,6 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         if(!user){
             throw new UnauthorizedException("Token không hợp lệ, hoặc hết hạn sử dụng")
         }
-        console.log(info, context, status);
         return user as TUser
     }
 

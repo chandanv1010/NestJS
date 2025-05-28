@@ -6,8 +6,8 @@ import { ClassConstructor, plainToClass } from "class-transformer";
 
 export type TResult<T, R> = T | T[] | R | R[] | null | string | number
 
-export interface BaseServiceInterface<C, U, T, R, ID = number>{
-    save<Q = C | U>(payload: Q, id?: ID): Promise<TResult<T, R>>
+export interface BaseServiceInterface<T, R, ID = number>{
+    save<Q>(payload: Q, id?: ID): Promise<TResult<T, R>>
     show(id: string | number): Promise<TResult<T, R>>
 }
 
@@ -41,10 +41,9 @@ export class BaseService<R extends IBaseRepository<TModel, ID>, TModel, Response
         if(!this.prismaService){
             throw new BadRequestException("Không thể mở transaction cho tiến trình này")
         }
-
         return await this.prismaService.$transaction(async() => {
              return await this.prepareModelData<P>(payload)
-                .then(() => this.beforeSave())
+                .then(() => this.beforeSave(id, payload))
                 .then(() => this.saveModel(id))
                 .then(() => this.afterSave())
                 .then(() => this.handleRelation())
@@ -58,7 +57,9 @@ export class BaseService<R extends IBaseRepository<TModel, ID>, TModel, Response
         return Promise.resolve(this)
     }
 
-    protected async beforeSave(): Promise<this>{
+    protected async beforeSave(id?: ID, payload?: unknown): Promise<this>{
+        console.log('id', id);
+        console.log('payload', payload);
         return Promise.resolve(this)
     }
 
@@ -96,8 +97,6 @@ export class BaseService<R extends IBaseRepository<TModel, ID>, TModel, Response
             return Promise.resolve(this.result as unknown as ResponseDTO[])
         }
         if(this.dto){
-            console.log(123);
-            
             return Promise.resolve(
                 plainToClass(this.dto, this.result, {
                     excludeExtraneousValues: true
