@@ -1,6 +1,6 @@
 import { Expose, Transform, TransformFnParams } from "class-transformer";
 
-export class UserCatalogueDto {
+export class UserCatalogueDTO {
 
     @Expose()
     @Transform(val => String(val.value))

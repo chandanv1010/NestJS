@@ -9,6 +9,7 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { JwtStrategy } from './jwt.strategy';
 import { MailModule } from '../mail/mail.module';
 import { QueueModule } from '../queue/queue.module';
+import { DataTransformer } from 'src/common/bases/data.transform';
 
 @Module({
   imports: [
@@ -23,6 +24,6 @@ import { QueueModule } from '../queue/queue.module';
     QueueModule
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtAuthGuard, JwtStrategy],
+  providers: [AuthService, JwtAuthGuard, JwtStrategy, DataTransformer],
 })
 export class AuthModule {}

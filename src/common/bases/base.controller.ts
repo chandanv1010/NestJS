@@ -17,8 +17,7 @@ const GUARD = common.admin
 
 export class BaseController<
     T extends {id: bigint}, 
-    S extends BaseServiceInterface<T, R>, 
-    R
+    S extends BaseServiceInterface<T>
 > {
     private readonly logger = new Logger(BaseController.name)
 

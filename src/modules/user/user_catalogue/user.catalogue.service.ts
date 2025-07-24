@@ -5,24 +5,27 @@ import { UserCatalogue } from '@prisma/client';
 import { BaseService } from 'src/common/bases/base.service';
 import { PrismaService } from "../../prisma/prisma.service";
 import { UserCatalogueRepository } from './user.catalogue.repository';
-import { UserCatalogueDto } from './dto/user.catalogue.response.dto';
 import { ValidateService } from 'src/modules/validate/validate.service';
 import { StoreRequest } from './dto/store.request';
 import { UpdateRequest } from './dto/update.request';
-import { log } from 'util';
+import { TCastField } from 'src/common/bases/base.service';
 
 @Injectable()
-export class UserCatalogueService extends BaseService<UserCatalogueRepository, UserCatalogue, UserCatalogueDto> {
+export class UserCatalogueService extends BaseService<UserCatalogueRepository, UserCatalogue> {
     
     private readonly serviceLogger = new Logger(UserCatalogueService.name)
 
+    protected fieldTypes: Record<string, TCastField> = {
+        publish: 'number',
+        id: 'bigint'
+    }
 
     constructor(
         private readonly userCatalogueRepository: UserCatalogueRepository,
         protected readonly prismaService: PrismaService,
         private readonly validateService: ValidateService
     ){
-        super(userCatalogueRepository, prismaService, UserCatalogueDto)
+        super(userCatalogueRepository, prismaService)
     }
 
     protected async beforeSave(id?: number, payload?: StoreRequest | UpdateRequest): Promise<this>{

@@ -1,19 +1,18 @@
 import { Injectable } from "@nestjs/common";
+import { ISpecifications } from "src/common/bases/base.service";
+import { IPaginateResult } from "src/classes/query-builder.class";
+import { PrismaModel } from "src/classes/query-builder.class";
+import { QueryBuilder } from "src/classes/query-builder.class";
 
-type PrismaModel<TModel> = {
-    findUnique(args: unknown): Promise<TModel | null>,
-    findMany(args?: unknown): Promise<TModel[]>,
-    create(args: unknown): Promise<TModel>,
-    update(args: unknown): Promise<TModel>,
-    delete(args: unknown): Promise<TModel>
-}
-
-export interface IBaseRepository <TModel, ID = number> {
+export interface IBaseRepository <TModel, ID = string | number> {
     setTransactionClient(tx: unknown): void,
     findById(id: ID): Promise<TModel | null>,
     findByField(field: string, value: string | number): Promise<TModel | null>,
     update<P extends Partial<TModel>>(id: ID, payload: P): Promise<TModel>,
-    create<P extends Partial<TModel>>(payload: P): Promise<TModel>
+    create<P extends Partial<TModel>>(payload: P): Promise<TModel>,
+    delete(id: ID) : Promise<TModel>,
+    pagination(specifications: ISpecifications): Promise<TModel[] | IPaginateResult<TModel>>,
+    query(): QueryBuilder<TModel>
 }
 
 @Injectable()
@@ -27,8 +26,18 @@ export class BaseRepository <T extends PrismaModel<TModel>, TModel, ID = number>
        
     }
 
+    query(): QueryBuilder<TModel>{
+        return new QueryBuilder<TModel>(this.model, this.transactionClient)
+    }
+
     setTransactionClient(tx: unknown){
         this.transactionClient = tx
+    }
+    
+    async pagination(specifications: ISpecifications): Promise<TModel[] | IPaginateResult<TModel>> {
+        const { type, keyword, sort, perpage, filter, page } = specifications
+        const result = await this.query().keyword(keyword).filter(filter.simple).sort(sort).execute(type, page, perpage)
+        return result
     }
 
     async findById(id: ID): Promise<TModel | null> {
@@ -55,6 +64,12 @@ export class BaseRepository <T extends PrismaModel<TModel>, TModel, ID = number>
     async create<P extends Partial<TModel>>(payload: P): Promise<TModel> {
         return await this.model.create({
             data: payload
+        })
+    }
+
+    async delete(id: ID): Promise<TModel>{
+        return await this.model.delete({
+            where: {id: id}
         })
     }
 

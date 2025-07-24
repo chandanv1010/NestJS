@@ -15,6 +15,8 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { GuardType } from 'src/common/guards/jwt-auth.guard'; 
 import { IUserResponse } from '../user/user/user.interface';
 import { UserDto } from '../user/user/dto/user.response.dto';
+import { DataTransformer } from 'src/common/bases/data.transform';
+import { User } from '@prisma/client';
 
 const GUARD = common.admin
 
@@ -22,7 +24,8 @@ const GUARD = common.admin
 export class AuthController {
     constructor(
         private readonly authService: AuthService,
-        private readonly userService: UserService
+        private readonly userService: UserService,
+        private readonly transformer: DataTransformer<User, UserDto>
     ) {}
 
     @Post('/login')
@@ -49,7 +52,7 @@ export class AuthController {
             if(!user){
                 throw new UnauthorizedException("Thông tin không hợp lệ")
             }
-            return ApiResponse.ok(user as UserDto, "Success!", HttpStatus.OK)          
+            return ApiResponse.ok(this.transformer.transformSingle(user, UserDto), "Success!", HttpStatus.OK)          
         }catch (error) {
             console.log(error)
             throw error

@@ -4,9 +4,10 @@ import { GlobalExceptionFilter } from './exceptions/global-exception.filter';
 import * as cookieParser from 'cookie-parser'
 import { useContainer } from 'class-validator';
 
-
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
+
+    
 
     app.useGlobalFilters(new GlobalExceptionFilter())  
     app.enableCors({
