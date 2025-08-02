@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { ISpecifications } from "src/common/bases/base.service";
+import { ISpecifications } from "src/classes/specification-builder.class";
 import { IPaginateResult } from "src/classes/query-builder.class";
 import { PrismaModel } from "src/classes/query-builder.class";
 import { QueryBuilder } from "src/classes/query-builder.class";

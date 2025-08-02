@@ -8,7 +8,7 @@ import { UserCatalogueRepository } from './user.catalogue.repository';
 import { ValidateService } from 'src/modules/validate/validate.service';
 import { StoreRequest } from './dto/store.request';
 import { UpdateRequest } from './dto/update.request';
-import { TCastField } from 'src/common/bases/base.service';
+import { TCastField } from 'src/classes/specification-builder.class';
 
 @Injectable()
 export class UserCatalogueService extends BaseService<UserCatalogueRepository, UserCatalogue> {

@@ -1,5 +1,5 @@
-import { TKeyword, TFilterItem } from "src/common/bases/base.service"
-
+// import { TKeyword, TFilterItem } from "src/common/bases/base.service"
+import { TKeyword, TFilterItem } from "./specification-builder.class"
 
 export interface IQueryBuilder {
     where?: Record<string, unknown>,

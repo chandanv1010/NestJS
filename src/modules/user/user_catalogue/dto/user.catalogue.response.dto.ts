@@ -4,7 +4,7 @@ export class UserCatalogueDTO {
 
     @Expose()
     @Transform(val => String(val.value))
-    id: string
+    id: bigint
 
     @Expose()
     name: string

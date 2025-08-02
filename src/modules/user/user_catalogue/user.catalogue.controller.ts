@@ -130,14 +130,12 @@ export class UserCatalogueController extends BaseController<
     @HttpCode(HttpStatus.OK)
     async paginate(
          @Req() req: Request
-    ): Promise<TApiReponse<TModelOrPaginate<UserCatalogue>>>{
+    ): Promise<TApiReponse<TModelOrPaginate<UserCatalogueDTO>>>{
         const data: UserCatalogue[] | IPaginateResult<UserCatalogue> = await this.userCatalogueService.paginate(req)
-        let dataTransform
-        if(Array.isArray(data)){
-            dataTransform = this.transformer.transformArray(data, UserCatalogueDTO)
-        }else{
-            dataTransform = this.transformer.transformPaginated(data, UserCatalogueDTO)
-        }
+        
+        const dataTransform: TModelOrPaginate<UserCatalogueDTO> = Array.isArray(data)
+            ? this.transformer.transformArray(data, UserCatalogueDTO)
+            : this.transformer.transformPaginated(data, UserCatalogueDTO)
 
         return ApiResponse.ok(
             dataTransform, 
